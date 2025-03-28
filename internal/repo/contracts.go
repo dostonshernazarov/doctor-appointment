@@ -15,6 +15,8 @@ type (
 		ListUsers(ctx context.Context) ([]entity.User, error)
 		UpdateUser(ctx context.Context, user entity.User) error
 		DeleteUser(ctx context.Context, id int) error
+		GetPasswordHash(ctx context.Context, email string) (string, error)
+		UpdateToken(ctx context.Context, id int, token string) error
 	}
 
 	// AppointmentRepo -.
@@ -33,8 +35,8 @@ type (
 	DoctorRepo interface {
 		CreateDoctor(ctx context.Context, doctor entity.Doctor) error
 		GetDoctorByID(ctx context.Context, id int) (entity.Doctor, error)
-		GetDoctorByEmail(ctx context.Context, email string) (entity.Doctor, error)
-		ListDoctors(ctx context.Context) ([]entity.Doctor, error)
+		GetDoctorBySpecialization(ctx context.Context, specialization string) ([]entity.Doctor, error)
+		GetDoctors(ctx context.Context) ([]entity.Doctor, error)
 		UpdateDoctor(ctx context.Context, doctor entity.Doctor) error
 		DeleteDoctor(ctx context.Context, id int) error
 		ListSpecializations(ctx context.Context) ([]string, error)

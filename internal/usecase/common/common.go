@@ -51,6 +51,16 @@ func (uc *UseCase) DeleteUser(ctx context.Context, id int) error {
 	return uc.userRepo.DeleteUser(ctx, id)
 }
 
+// GetPasswordHash -.
+func (uc *UseCase) GetPasswordHash(ctx context.Context, email string) (string, error) {
+	return uc.userRepo.GetPasswordHash(ctx, email)
+}
+
+// UpdateToken -.
+func (uc *UseCase) UpdateToken(ctx context.Context, id int, token string) error {
+	return uc.userRepo.UpdateToken(ctx, id, token)
+}
+
 // CreateDoctor -.
 func (uc *UseCase) CreateDoctor(ctx context.Context, doctor entity.Doctor) error {
 	return uc.doctorRepo.CreateDoctor(ctx, doctor)
@@ -62,13 +72,13 @@ func (uc *UseCase) GetDoctorByID(ctx context.Context, id int) (entity.Doctor, er
 }
 
 // GetDoctorByEmail -.
-func (uc *UseCase) GetDoctorByEmail(ctx context.Context, email string) (entity.Doctor, error) {
-	return uc.doctorRepo.GetDoctorByEmail(ctx, email)
+func (uc *UseCase) GetDoctorBySpecialization(ctx context.Context, specialization string) ([]entity.Doctor, error) {
+	return uc.doctorRepo.GetDoctorBySpecialization(ctx, specialization)
 }
 
 // ListDoctors -.
-func (uc *UseCase) ListDoctors(ctx context.Context) ([]entity.Doctor, error) {
-	return uc.doctorRepo.ListDoctors(ctx)
+func (uc *UseCase) GetDoctors(ctx context.Context) ([]entity.Doctor, error) {
+	return uc.doctorRepo.GetDoctors(ctx)
 }
 
 // UpdateDoctor -.

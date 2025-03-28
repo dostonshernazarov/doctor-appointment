@@ -25,8 +25,8 @@ func NewUser(pg *postgres.Postgres) *UserRepo {
 func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) error {
 	sql, args, err := r.Builder.
 		Insert("users").
-		Columns("fullname", "email", "phone", "password_hash").
-		Values(user.FullName, user.Email, user.Phone, user.Password).ToSql()
+		Columns("fullname", "email", "phone", "password_hash", "role").
+		Values(user.FullName, user.Email, user.Phone, user.Password, user.Role).ToSql()
 
 	if err != nil {
 		return fmt.Errorf("UserRepo - Store - r.Builder: %w", err)
@@ -40,10 +40,10 @@ func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) error {
 	return nil
 }
 
-// GetByEmail -.
-func (r *UserRepo) GetByEmail(ctx context.Context, email string) (entity.User, error) {
+// GetUserByEmail -.
+func (r *UserRepo) GetUserByEmail(ctx context.Context, email string) (entity.User, error) {
 	sql, args, err := r.Builder.
-		Select("id", "fullname", "email", "phone", "created_at", "updated_at").
+		Select("id", "fullname", "email", "phone", "role", "created_at", "updated_at").
 		From("users").
 		Where("email = ?", email).
 		Limit(1).
@@ -56,7 +56,7 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (entity.User, e
 	row := r.Pool.QueryRow(ctx, sql, args...)
 
 	var user entity.User
-	err = row.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	err = row.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("UserRepo - GetByEmail - row.Scan: %w", err)
 	}
@@ -67,7 +67,7 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (entity.User, e
 // ListUsers -.
 func (r *UserRepo) ListUsers(ctx context.Context) ([]entity.User, error) {
 	sql, args, err := r.Builder.
-		Select("id", "fullname", "email", "phone", "created_at", "updated_at").
+		Select("id", "fullname", "email", "phone", "role", "created_at", "updated_at").
 		From("users").
 		ToSql()
 
@@ -84,7 +84,7 @@ func (r *UserRepo) ListUsers(ctx context.Context) ([]entity.User, error) {
 	users := make([]entity.User, 0, _defaultEntityCap)
 	for rows.Next() {
 		var user entity.User
-		err = rows.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+		err = rows.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("UserRepo - ListUser - rows.Scan: %w", err)
 		}
@@ -96,7 +96,7 @@ func (r *UserRepo) ListUsers(ctx context.Context) ([]entity.User, error) {
 }
 
 // UpdateUser -.
-func (r *UserRepo) UpdateUser(ctx context.Context, user entity.User) error {
+func (r *UserRepo) UpdateUser(ctx context.Context, user entity.UserUpdate) error {
 	updateTime := time.Now()
 	sql, args, err := r.Builder.
 		Update("users").
@@ -142,7 +142,7 @@ func (r *UserRepo) DeleteUser(ctx context.Context, id int) error {
 // GetUserByID -.
 func (r *UserRepo) GetUserByID(ctx context.Context, id int) (entity.User, error) {
 	sql, args, err := r.Builder.
-		Select("id", "fullname", "email", "phone", "created_at", "updated_at").
+		Select("id", "fullname", "email", "phone", "role", "created_at", "updated_at").
 		From("users").
 		Where("id = ?", id).
 		Limit(1).
@@ -155,11 +155,55 @@ func (r *UserRepo) GetUserByID(ctx context.Context, id int) (entity.User, error)
 	row := r.Pool.QueryRow(ctx, sql, args...)
 
 	var user entity.User
-	err = row.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	err = row.Scan(&user.ID, &user.FullName, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("UserRepo - GetUserByID - row.Scan: %w", err)
 	}
 
 	return user, nil
 
+}
+
+// GetPasswordHash -.
+func (r *UserRepo) GetPasswordHash(ctx context.Context, email string) (string, error) {
+	sql, args, err := r.Builder.
+		Select("password_hash").
+		From("users").
+		Where("email = ?", email).
+		Limit(1).
+		ToSql()
+
+	if err != nil {
+		return "", fmt.Errorf("UserRepo - GetPasswordHash - r.Builder: %w", err)
+	}
+
+	row := r.Pool.QueryRow(ctx, sql, args...)
+
+	var passwordHash string
+	err = row.Scan(&passwordHash)
+	if err != nil {
+		return "", fmt.Errorf("UserRepo - GetPasswordHash - row.Scan: %w", err)
+	}
+
+	return passwordHash, nil
+}
+
+// UpdateToken -.
+func (r *UserRepo) UpdateToken(ctx context.Context, id int, token string) error {
+	sql, args, err := r.Builder.
+		Update("users").
+		Set("token", token).
+		Where("id = ?", id).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("UserRepo - UpdateToken - r.Builder: %w", err)
+	}
+
+	_, err = r.Pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("UserRepo - UpdateToken - r.Pool.Exec: %w", err)
+	}
+
+	return nil
 }
