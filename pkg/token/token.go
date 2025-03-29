@@ -1,135 +1,48 @@
-package tokens
+package auth
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"strings"
 	"time"
 
-	"github.com/dostonshernazarov/doctor-appointment/config"
-
-	"github.com/dgrijalva/jwt-go"
-	"go.uber.org/zap"
+	"github.com/golang-jwt/jwt"
 )
 
-type JwtHandler struct {
-	Sub       string
-	Iss       string
-	Exp       string
-	Iat       string
-	Aud       []string
-	Role      string
-	Token     string
-	SigninKey string
-	Log       *zap.Logger
-	Timeout   int
+type Claims struct {
+	Email string `json:"email"`
+	Role  string `json:"role"`
+	jwt.StandardClaims
 }
 
-func (jwtHandler *JwtHandler) GenerateJwt() (access, refresh string, err error) {
-	var (
-		accessToken, refreshToken *jwt.Token
-		claims                    jwt.MapClaims
-	)
-
-	accessToken = jwt.New(jwt.SigningMethodHS256)
-	refreshToken = jwt.New(jwt.SigningMethodHS256)
-
-	claims = accessToken.Claims.(jwt.MapClaims)
-	claims["sub"] = jwtHandler.Sub
-	claims["iss"] = jwtHandler.Iss
-	claims["exp"] = time.Now().Add(time.Hour * 200).Unix()
-	claims["iat"] = time.Now().Unix()
-	claims["role"] = jwtHandler.Role
-
-	access, err = accessToken.SignedString([]byte(jwtHandler.SigninKey))
-	if err != nil {
-		jwtHandler.Log.Error("error generating access token", zap.Error(err))
-		zap.Error(err)
-		return
+func GenerateJWTToken(email, role, secret string, expiration time.Duration) (string, error) {
+	claims := &Claims{
+		Email: email,
+		Role:  role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(expiration).Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Issuer:    "doctor-appointment",
+		},
 	}
 
-	rtClaims := refreshToken.Claims.(jwt.MapClaims)
-	rtClaims["sub"] = jwtHandler.Sub
-	rtClaims["exp"] = time.Now().Add(time.Hour * 400).Unix()
-	rtClaims["iat"] = time.Now().Unix()
-	rtClaims["role"] = jwtHandler.Role
-
-	refresh, err = refreshToken.SignedString([]byte(jwtHandler.SigninKey))
-	if err != nil {
-		jwtHandler.Log.Error("error generating refresh token", zap.Error(err))
-		zap.Error(err)
-		return
-	}
-
-	return access, refresh, nil
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }
 
-func (jwtHandler *JwtHandler) ExtractClaims() (jwt.MapClaims, error) {
-	var (
-		token *jwt.Token
-		err   error
-	)
-
-	token, err = jwt.Parse(jwtHandler.Token, func(t *jwt.Token) (interface{}, error) {
-		return []byte(jwtHandler.SigninKey), nil
+func ParseToken(tokenString, secret string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !(ok && token.Valid) {
-		log.Println("invalid jwt token")
-		return nil, err
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
 
-	return claims, nil
-}
-
-func ExtractClaim(tokenStr string, signingKey []byte) (jwt.MapClaims, error) {
-	var (
-		token *jwt.Token
-		err   error
-	)
-
-	token, err = jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return signingKey, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !(ok && token.Valid) {
-		err = fmt.Errorf("invalid JWT Token")
-		return nil, err
-	}
-
-	return claims, nil
-}
-
-func GetClaimsFromToken(request *http.Request, cfg *config.Config) (map[string]interface{}, error) {
-	token := request.Header.Get("Authorization")
-
-	if token == "" {
-		return map[string]interface{}{
-			"role": "unauthorized",
-			"sub":  nil,
-			"exp":  nil,
-			"iat":  nil,
-		}, nil
-	}
-
-	if strings.Contains(token, "Bearer ") {
-		token = strings.Split(token, "Bearer ")[1]
-	}
-
-	claims, err := tokens.ExtractClaim(token, []byte(cfg.SigningKey))
-	if err != nil {
-		return nil, err
-	}
-
-	return claims, nil
+	return nil, fmt.Errorf("invalid token")
 }

@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/dostonshernazarov/doctor-appointment/config"
+	v1 "github.com/dostonshernazarov/doctor-appointment/internal/controller/http"
 	"github.com/dostonshernazarov/doctor-appointment/internal/repo/persistent"
 	"github.com/dostonshernazarov/doctor-appointment/internal/usecase/common"
 	"github.com/dostonshernazarov/doctor-appointment/pkg/httpserver"
@@ -32,7 +33,14 @@ func Run(cfg *config.Config) {
 	)
 
 	httpServer := httpserver.New(httpserver.Port(cfg.HTTP.Port), httpserver.Prefork(cfg.HTTP.UsePreforkMode))
-	v1.NewRouter(httpServer.App, cfg, l, usecaseCommon)
+	v1.NewRouter(v1.NewRouterConfig(
+		httpServer.App,
+		cfg,
+		l,
+		usecaseCommon,
+		usecaseCommon,
+		usecaseCommon,
+	))
 
 	httpServer.Start()
 

@@ -2,10 +2,36 @@ package http
 
 import (
 	"github.com/dostonshernazarov/doctor-appointment/config"
+	_ "github.com/dostonshernazarov/doctor-appointment/docs" // Swagger docs.
 	"github.com/dostonshernazarov/doctor-appointment/internal/controller/http/middleware"
+	v1 "github.com/dostonshernazarov/doctor-appointment/internal/controller/http/v1"
+	"github.com/dostonshernazarov/doctor-appointment/internal/usecase"
 	"github.com/dostonshernazarov/doctor-appointment/pkg/logger"
-	"github.com/gofiber/fiber"
+	"github.com/go-playground/validator"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/swagger"
 )
+
+type Router struct {
+	app         *fiber.App
+	cfg         *config.Config
+	l           logger.Interface
+	user        usecase.UserUsecase
+	doctor      usecase.DoctorUsecase
+	appointment usecase.AppointmentUsecase
+}
+
+// NewRouterConfig creates a new Router configuration
+func NewRouterConfig(app *fiber.App, cfg *config.Config, l logger.Interface, user usecase.UserUsecase, doctor usecase.DoctorUsecase, appointment usecase.AppointmentUsecase) *Router {
+	return &Router{
+		app:         app,
+		cfg:         cfg,
+		l:           l,
+		user:        user,
+		doctor:      doctor,
+		appointment: appointment,
+	}
+}
 
 // NewRouter -.
 // Swagger spec:
@@ -14,26 +40,25 @@ import (
 // @version     1.0
 // @host        localhost:8070
 // @BasePath    /v1
-func NewRouter(app *fiber.App, cfg *config.Config, l logger.Interface, uc usecase.UseCase) {
-	app.Use(middleware.Logger(l))
-	app.Use(middleware.Recover(l))
-
-	// Prometheus metrics
-	if cfg.Metrics.Enabled {
-		prometheus := fiberprometheus.New("doctor-appointment")
-		prometheus.RegisterAt(app, "/metrics")
-		app.Use(prometheus.Middleware)
-	}
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+func NewRouter(r *Router) {
+	r.app.Use(middleware.Logger(r.l))
 
 	// Swagger
-	if cfg.Swagger.Enabled {
-		app.Get("/swagger/*", swagger.HandlerDefault)
-	}
+	r.app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Routes
-	apiV1Group := app.Group("/v1")
+	apiV1Group := r.app.Group("/v1")
 	{
-		v1.NewUserRoutes(apiV1Group, uc.User, l)
+		v1.NewUserRoutes(v1.HandlerV1Config{
+			Config:     r.cfg,
+			Logger:     r.l,
+			Validation: validator.New(),
+			User:       r.user,
+			Router:     apiV1Group,
+		})
 	}
 
 }

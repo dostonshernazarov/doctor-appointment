@@ -30,3 +30,12 @@ type UpdateUserRequest struct {
 	FullName string `json:"full_name" validate:"required"`
 	Phone    string `json:"phone"`
 }
+
+type Error struct {
+	Message string `json:"message"`
+}
+
+// Ping
+type PingResponse struct {
+	Message string `json:"message"`
+}

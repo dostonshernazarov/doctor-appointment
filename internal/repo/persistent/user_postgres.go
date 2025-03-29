@@ -96,7 +96,7 @@ func (r *UserRepo) ListUsers(ctx context.Context) ([]entity.User, error) {
 }
 
 // UpdateUser -.
-func (r *UserRepo) UpdateUser(ctx context.Context, user entity.UserUpdate) error {
+func (r *UserRepo) UpdateUser(ctx context.Context, user entity.User) error {
 	updateTime := time.Now()
 	sql, args, err := r.Builder.
 		Update("users").

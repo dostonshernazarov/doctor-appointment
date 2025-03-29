@@ -15,6 +15,7 @@ type (
 		PG      PG
 		Metrics Metrics
 		Swagger Swagger
+		Jwt     Jwt
 	}
 
 	// App -.
@@ -46,6 +47,13 @@ type (
 
 	Swagger struct {
 		Enabled bool `env:"SWAGGER_ENABLED" envDefault:"false"`
+	}
+
+	Jwt struct {
+		Admin     string `env:"ROLE_ADMIN,required"`
+		User      string `env:"ROLE_USER,required"`
+		Secret    string `env:"JWT_SECRET,required"`
+		ExpiresAt int    `env:"JWT_EXPIRES_AT,required"`
 	}
 )
 

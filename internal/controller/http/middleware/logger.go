@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/dostonshernazarov/doctor-appointment/pkg/logger"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 func buildRequestMessage(ctx *fiber.Ctx) string {
