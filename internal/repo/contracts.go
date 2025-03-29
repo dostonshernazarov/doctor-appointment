@@ -29,6 +29,7 @@ type (
 		GetBookedAppointmentsByUserId(ctx context.Context, userID int) ([]entity.Appointment, error)
 		GetAppointmentByID(ctx context.Context, id int) (entity.Appointment, error)
 		GetAppointmentsByUserID(ctx context.Context, userID int) ([]entity.Appointment, error)
+		GetAllAppointments(ctx context.Context) ([]entity.Appointment, error)
 	}
 
 	// DoctorRepo -.

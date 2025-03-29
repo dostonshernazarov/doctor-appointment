@@ -45,10 +45,42 @@ func NewUserRoutes(c HandlerV1Config) {
 	}
 
 	// Should not be role required in signup
-	userGroup := r.Router.Group("/auth")
+	authGroup := r.Router.Group("/auth")
 	{
-		userGroup.Post("/signup", r.SignUpUser)
-		userGroup.Post("/signin", r.SignInUser)
+		authGroup.Post("/signup", r.SignUpUser)
+		authGroup.Post("/signin", r.SignInUser)
+	}
+
+	userGroup := r.Router.Group("/users")
+	{
+		userGroup.Post("/", r.CreateUser)
+		userGroup.Get("/", r.GetAllUsers)
+		userGroup.Get("/:id", r.GetUser)
+		userGroup.Put("/:id", r.UpdateUser)
+		userGroup.Delete("/:id", r.DeleteUser)
+	}
+
+	doctorGroup := r.Router.Group("/doctors")
+	{
+		doctorGroup.Post("/", r.CreateDoctor)
+		doctorGroup.Get("/", r.GetAllDoctors)
+		doctorGroup.Get("/:id", r.GetDoctorByID)
+		doctorGroup.Put("/:id", r.UpdateDoctor)
+		doctorGroup.Delete("/:id", r.DeleteDoctor)
+		doctorGroup.Get("/specializations", r.ListSpecializations)
+		doctorGroup.Get("/specialization/:specialization", r.GetDoctorsBySpecialization)
+	}
+
+	appointmentGroup := r.Router.Group("/appointments")
+	{
+		appointmentGroup.Post("/", r.CreateAppointment)
+		appointmentGroup.Get("/:id", r.GetAppointmentByID)
+		appointmentGroup.Put("/:id", r.UpdateAppointment)
+		appointmentGroup.Delete("/:id", r.DeleteAppointment)
+		appointmentGroup.Get("/doctor/:doctor_id", r.GetAppointmentsByDoctorID)
+		appointmentGroup.Get("/user/:user_id", r.GetAppointmentsByUserID)
+		appointmentGroup.Get("/doctor/:doctor_id/booked-schedules", r.GetBookedSchedulesByDoctorID)
+		appointmentGroup.Get("/user/:user_id/booked-schedules", r.GetBookedSchedulesByUserID)
 	}
 
 	// Ping

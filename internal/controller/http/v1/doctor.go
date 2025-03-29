@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/dostonshernazarov/doctor-appointment/internal/controller/http/models"
@@ -29,16 +30,19 @@ func (h *HandlerV1) CreateDoctor(c *fiber.Ctx) error {
 	err := h.Doctor.CreateDoctor(c.Context(), entity.Doctor{
 		Name:           doctor.Name,
 		Specialization: doctor.Specialization,
-		Schedule:       doctor.Schedule,
-		CreatedAt:      timeNow,
-		UpdatedAt:      timeNow,
+		Schedule: entity.Schedule{
+			Days:  doctor.Schedule.Days,
+			Start: doctor.Schedule.Start,
+			End:   doctor.Schedule.End,
+		},
+		CreatedAt: timeNow,
+		UpdatedAt: timeNow,
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(models.DoctorResponse{
-		ID:             doctor.ID,
 		Name:           doctor.Name,
 		Specialization: doctor.Specialization,
 		Schedule:       doctor.Schedule,
@@ -60,8 +64,12 @@ func (h *HandlerV1) CreateDoctor(c *fiber.Ctx) error {
 // @Router /doctors/{id} [get]
 func (h *HandlerV1) GetDoctorByID(c *fiber.Ctx) error {
 	doctorID := c.Params("id")
+	doctorIDInt, err := strconv.Atoi(doctorID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid doctor ID"})
+	}
 
-	doctor, err := h.Doctor.GetDoctorByID(c.Context(), doctorID)
+	doctor, err := h.Doctor.GetDoctorByID(c.Context(), doctorIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -70,9 +78,13 @@ func (h *HandlerV1) GetDoctorByID(c *fiber.Ctx) error {
 		ID:             doctor.ID,
 		Name:           doctor.Name,
 		Specialization: doctor.Specialization,
-		Schedule:       doctor.Schedule,
-		CreatedAt:      doctor.CreatedAt,
-		UpdatedAt:      doctor.UpdatedAt,
+		Schedule: models.Schedule{
+			Days:  doctor.Schedule.Days,
+			Start: doctor.Schedule.Start,
+			End:   doctor.Schedule.End,
+		},
+		CreatedAt: doctor.CreatedAt,
+		UpdatedAt: doctor.UpdatedAt,
 	})
 }
 
@@ -90,6 +102,10 @@ func (h *HandlerV1) GetDoctorByID(c *fiber.Ctx) error {
 // @Router /doctors/{id} [put]
 func (h *HandlerV1) UpdateDoctor(c *fiber.Ctx) error {
 	doctorID := c.Params("id")
+	doctorIDInt, err := strconv.Atoi(doctorID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid doctor ID"})
+	}
 
 	doctor := models.Doctor{}
 	if err := c.BodyParser(&doctor); err != nil {
@@ -97,7 +113,7 @@ func (h *HandlerV1) UpdateDoctor(c *fiber.Ctx) error {
 	}
 
 	// Get doctor by id
-	doctorGet, err := h.Doctor.GetDoctorByID(c.Context(), doctorID)
+	doctorGet, err := h.Doctor.GetDoctorByID(c.Context(), doctorIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -105,19 +121,23 @@ func (h *HandlerV1) UpdateDoctor(c *fiber.Ctx) error {
 	timeNow := time.Now()
 
 	err = h.Doctor.UpdateDoctor(c.Context(), entity.Doctor{
-		ID:             doctorID,
+		ID:             doctorIDInt,
 		Name:           doctor.Name,
 		Specialization: doctor.Specialization,
-		Schedule:       doctor.Schedule,
-		CreatedAt:      doctorGet.CreatedAt,
-		UpdatedAt:      timeNow,
+		Schedule: entity.Schedule{
+			Days:  doctor.Schedule.Days,
+			Start: doctor.Schedule.Start,
+			End:   doctor.Schedule.End,
+		},
+		CreatedAt: doctorGet.CreatedAt,
+		UpdatedAt: timeNow,
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.JSON(models.DoctorResponse{
-		ID:             doctorID,
+		ID:             doctorIDInt,
 		Name:           doctor.Name,
 		Specialization: doctor.Specialization,
 		Schedule:       doctor.Schedule,
@@ -139,8 +159,12 @@ func (h *HandlerV1) UpdateDoctor(c *fiber.Ctx) error {
 // @Router /doctors/{id} [delete]
 func (h *HandlerV1) DeleteDoctor(c *fiber.Ctx) error {
 	doctorID := c.Params("id")
+	doctorIDInt, err := strconv.Atoi(doctorID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid doctor ID"})
+	}
 
-	err := h.Doctor.DeleteDoctor(c.Context(), doctorID)
+	err = h.Doctor.DeleteDoctor(c.Context(), doctorIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -161,7 +185,7 @@ func (h *HandlerV1) DeleteDoctor(c *fiber.Ctx) error {
 // @Failure 500 {object} models.Error
 // @Router /doctors [get]
 func (h *HandlerV1) GetAllDoctors(c *fiber.Ctx) error {
-	doctors, err := h.Doctor.GetAllDoctors(c.Context())
+	doctors, err := h.Doctor.GetDoctors(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -185,7 +209,7 @@ func (h *HandlerV1) GetAllDoctors(c *fiber.Ctx) error {
 func (h *HandlerV1) GetDoctorsBySpecialization(c *fiber.Ctx) error {
 	specialization := c.Params("specialization")
 
-	doctors, err := h.Doctor.GetDoctorsBySpecialization(c.Context(), specialization)
+	doctors, err := h.Doctor.GetDoctorBySpecialization(c.Context(), specialization)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -216,26 +240,7 @@ func (h *HandlerV1) ListSpecializations(c *fiber.Ctx) error {
 	})
 }
 
-// @Summary Get booked schedules by doctor id
-// @Description Get booked schedules by doctor id
+// @Summary Get doctor by specialization
+// @Description Get doctor by specialization
 // @Accept json
 // @Produce json
-// @Tags doctor
-// @Param id path int true "Doctor ID"
-// @Success 200 {object} models.BookedSchedulesResponse
-// @Failure 400 {object} models.Error
-// @Failure 404 {object} models.Error
-// @Failure 500 {object} models.Error
-// @Router /doctors/{id}/booked-schedules [get]
-func (h *HandlerV1) GetBookedSchedulesByDoctorID(c *fiber.Ctx) error {
-	doctorID := c.Params("id")
-
-	bookedSchedules, err := h.Doctor.GetBookedSchedulesByDoctorID(c.Context(), doctorID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	return c.JSON(models.BookedSchedulesResponse{
-		BookedSchedules: bookedSchedules,
-	})
-}

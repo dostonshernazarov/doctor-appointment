@@ -140,3 +140,8 @@ func (uc *UseCase) GetAppointmentsByUserID(ctx context.Context, userID int) ([]e
 func (uc *UseCase) GetBookedSchedulesByDoctorID(ctx context.Context, doctorID int) ([]entity.Schedule, error) {
 	return uc.doctorRepo.GetBookedSchedulesByDoctorID(ctx, doctorID)
 }
+
+// GetAllAppointments -.
+func (uc *UseCase) GetAllAppointments(ctx context.Context) ([]entity.Appointment, error) {
+	return uc.appointmentRepo.GetAllAppointments(ctx)
+}

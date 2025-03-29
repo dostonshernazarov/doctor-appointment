@@ -1,6 +1,10 @@
 package v1
 
 import (
+	"strconv"
+
+	"github.com/dostonshernazarov/doctor-appointment/internal/controller/http/models"
+	"github.com/dostonshernazarov/doctor-appointment/internal/entity"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -26,7 +30,7 @@ func (h *HandlerV1) CreateAppointment(c *fiber.Ctx) error {
 		DoctorID:        appointment.DoctorID,
 		UserID:          appointment.UserID,
 		AppointmentTime: appointment.AppointmentTime,
-		Duration:        appointment.Duration,
+		Duration:        int(appointment.Duration.Minutes()),
 		Status:          appointment.Status,
 	})
 	if err != nil {
@@ -34,7 +38,6 @@ func (h *HandlerV1) CreateAppointment(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(models.AppointmentResponse{
-		ID:       appointment.ID,
 		DoctorID: appointment.DoctorID,
 		UserID:   appointment.UserID,
 	})
@@ -52,8 +55,12 @@ func (h *HandlerV1) CreateAppointment(c *fiber.Ctx) error {
 // @Router /appointments/doctor/{doctor_id} [get]
 func (h *HandlerV1) GetAppointmentsByDoctorID(c *fiber.Ctx) error {
 	doctorID := c.Params("doctor_id")
+	doctorIDInt, err := strconv.Atoi(doctorID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid doctor ID"})
+	}
 
-	appointments, err := h.Appointment.GetAppointmentsByDoctorID(c.Context(), doctorID)
+	appointments, err := h.Appointment.GetAppointmentsByDoctorID(c.Context(), doctorIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -75,8 +82,12 @@ func (h *HandlerV1) GetAppointmentsByDoctorID(c *fiber.Ctx) error {
 // @Router /appointments/user/{user_id} [get]
 func (h *HandlerV1) GetAppointmentsByUserID(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user ID"})
+	}
 
-	appointments, err := h.Appointment.GetAppointmentsByUserID(c.Context(), userID)
+	appointments, err := h.Appointment.GetAppointmentsByUserID(c.Context(), userIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -91,23 +102,30 @@ func (h *HandlerV1) GetAppointmentsByUserID(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Tags appointment
+// @Param appointment_id path int true "Appointment ID"
 // @Param appointment body models.Appointment true "Appointment"
 // @Success 200 {object} models.AppointmentResponse
 // @Failure 400 {object} models.Error
 // @Failure 500 {object} models.Error
 // @Router /appointments [put]
 func (h *HandlerV1) UpdateAppointment(c *fiber.Ctx) error {
+	appointmentID := c.Params("appointment_id")
+	appointmentIDInt, err := strconv.Atoi(appointmentID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid appointment ID"})
+	}
+
 	appointment := models.Appointment{}
 	if err := c.BodyParser(&appointment); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err := h.Appointment.UpdateAppointment(c.Context(), entity.Appointment{
-		ID:              appointment.ID,
+	err = h.Appointment.UpdateAppointment(c.Context(), entity.Appointment{
+		ID:              appointmentIDInt,
 		DoctorID:        appointment.DoctorID,
 		UserID:          appointment.UserID,
 		AppointmentTime: appointment.AppointmentTime,
-		Duration:        appointment.Duration,
+		Duration:        int(appointment.Duration.Minutes()),
 		Status:          appointment.Status,
 	})
 	if err != nil {
@@ -115,11 +133,10 @@ func (h *HandlerV1) UpdateAppointment(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(models.AppointmentResponse{
-		ID:              appointment.ID,
 		DoctorID:        appointment.DoctorID,
 		UserID:          appointment.UserID,
 		AppointmentTime: appointment.AppointmentTime,
-		Duration:        appointment.Duration,
+		Duration:        int(appointment.Duration.Minutes()),
 		Status:          appointment.Status,
 	})
 }
@@ -136,8 +153,12 @@ func (h *HandlerV1) UpdateAppointment(c *fiber.Ctx) error {
 // @Router /appointments/{appointment_id} [delete]
 func (h *HandlerV1) DeleteAppointment(c *fiber.Ctx) error {
 	appointmentID := c.Params("appointment_id")
+	appointmentIDInt, err := strconv.Atoi(appointmentID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid appointment ID"})
+	}
 
-	err := h.Appointment.DeleteAppointment(c.Context(), appointmentID)
+	err = h.Appointment.DeleteAppointment(c.Context(), appointmentIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -159,8 +180,12 @@ func (h *HandlerV1) DeleteAppointment(c *fiber.Ctx) error {
 // @Router /appointments/doctor/{doctor_id}/booked-schedules [get]
 func (h *HandlerV1) GetBookedSchedulesByDoctorID(c *fiber.Ctx) error {
 	doctorID := c.Params("doctor_id")
+	doctorIDInt, err := strconv.Atoi(doctorID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid doctor ID"})
+	}
 
-	bookedSchedules, err := h.Appointment.GetBookedSchedulesByDoctorID(c.Context(), doctorID)
+	bookedSchedules, err := h.Appointment.GetBookedAppointmentsByDoctorId(c.Context(), doctorIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -182,8 +207,12 @@ func (h *HandlerV1) GetBookedSchedulesByDoctorID(c *fiber.Ctx) error {
 // @Router /appointments/user/{user_id}/booked-schedules [get]
 func (h *HandlerV1) GetBookedSchedulesByUserID(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid user ID"})
+	}
 
-	bookedSchedules, err := h.Appointment.GetBookedSchedulesByUserID(c.Context(), userID)
+	bookedSchedules, err := h.Appointment.GetBookedAppointmentsByUserId(c.Context(), userIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -206,8 +235,12 @@ func (h *HandlerV1) GetBookedSchedulesByUserID(c *fiber.Ctx) error {
 // @Router /appointments/{appointment_id} [get]
 func (h *HandlerV1) GetAppointmentByID(c *fiber.Ctx) error {
 	appointmentID := c.Params("appointment_id")
+	appointmentIDInt, err := strconv.Atoi(appointmentID)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid appointment ID"})
+	}
 
-	appointment, err := h.Appointment.GetAppointmentByID(c.Context(), appointmentID)
+	appointment, err := h.Appointment.GetAppointmentByID(c.Context(), appointmentIDInt)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

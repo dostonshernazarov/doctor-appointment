@@ -30,7 +30,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error
 		Values(user.FullName, user.Email, user.Phone, user.Password, user.Role).ToSql()
 
 	if err != nil {
-		return fmt.Errorf("UserRepo - Store - r.Builder: %w", err)
+		return 0, fmt.Errorf("UserRepo - Store - r.Builder: %w", err)
 	}
 
 	row := r.Pool.QueryRow(ctx, sql, args...)
@@ -38,7 +38,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error
 	var id int
 	err = row.Scan(&id)
 	if err != nil {
-		return fmt.Errorf("UserRepo - Store - r.Pool.Exec: %w", err)
+		return 0, fmt.Errorf("UserRepo - Store - r.Pool.Exec: %w", err)
 	}
 
 	return id, nil

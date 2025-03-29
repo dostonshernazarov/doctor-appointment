@@ -250,3 +250,34 @@ func (r *AppointmentRepo) GetBookedAppointmentsByUserId(ctx context.Context, use
 
 	return appointments, nil
 }
+
+// GetAllAppointments -.
+func (r *AppointmentRepo) GetAllAppointments(ctx context.Context) ([]entity.Appointment, error) {
+	sql, args, err := r.Builder.
+		Select("id", "user_id", "doctor_id", "appointment_time", "duration", "status", "created_at", "updated_at").
+		From("appointments").
+		ToSql()
+
+	if err != nil {
+		return nil, fmt.Errorf("AppointmentRepo - GetAllAppointments - r.Builder: %w", err)
+	}
+
+	rows, err := r.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("AppointmentRepo - GetAllAppointments - r.Pool.Query: %w", err)
+	}
+	defer rows.Close()
+
+	var appointments []entity.Appointment
+	for rows.Next() {
+		var appointment entity.Appointment
+		err = rows.Scan(&appointment.ID, &appointment.UserID, &appointment.DoctorID, &appointment.AppointmentTime, &appointment.Duration, &appointment.Status, &appointment.CreatedAt, &appointment.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("AppointmentRepo - GetAllAppointments - rows.Scan: %w", err)
+		}
+
+		appointments = append(appointments, appointment)
+	}
+
+	return appointments, nil
+}

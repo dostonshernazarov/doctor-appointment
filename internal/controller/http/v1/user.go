@@ -2,6 +2,8 @@ package v1
 
 import (
 	"github.com/dostonshernazarov/doctor-appointment/internal/controller/http/models"
+	"github.com/dostonshernazarov/doctor-appointment/internal/entity"
+	"github.com/dostonshernazarov/doctor-appointment/pkg/etc"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,7 +23,17 @@ func (h *HandlerV1) CreateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	id, err := h.User.CreateUser(c.Context(), user)
+	hashedPassword, err := etc.HashPassword(user.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	id, err := h.User.CreateUser(c.Context(), entity.User{
+		Email:    user.Email,
+		FullName: user.FullName,
+		Phone:    user.Phone,
+		Password: hashedPassword,
+	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -92,7 +104,7 @@ func (h *HandlerV1) UpdateUser(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(models.UserResponse{
-		ID:       user.ID,
+		ID:       userID,
 		Email:    user.Email,
 		FullName: user.FullName,
 		Phone:    user.Phone,
@@ -135,7 +147,7 @@ func (h *HandlerV1) DeleteUser(c *fiber.Ctx) error {
 // @Failure 500 {object} models.Error
 // @Router /users [get]
 func (h *HandlerV1) GetAllUsers(c *fiber.Ctx) error {
-	users, err := h.User.GetAllUsers(c.Context())
+	users, err := h.User.ListUsers(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

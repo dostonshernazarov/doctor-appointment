@@ -49,7 +49,7 @@ func (r *HandlerV1) SignUpUser(c *fiber.Ctx) error {
 		return errorResponse(c, http.StatusInternalServerError, "failed to generate token")
 	}
 
-	err = r.User.CreateUser(c.Context(), entity.User{
+	_, err = r.User.CreateUser(c.Context(), entity.User{
 		Email:    req.Email,
 		Password: hashedPassword,
 		FullName: req.FullName,

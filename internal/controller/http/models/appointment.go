@@ -15,9 +15,12 @@ type Appointment struct {
 }
 
 type AppointmentResponse struct {
-	ID       int `json:"id"`
-	DoctorID int `json:"doctor_id"`
-	UserID   int `json:"user_id"`
+	ID              int       `json:"id"`
+	DoctorID        int       `json:"doctor_id"`
+	UserID          int       `json:"user_id"`
+	AppointmentTime time.Time `json:"appointment_time"`
+	Duration        int       `json:"duration"`
+	Status          string    `json:"status"`
 }
 
 type AppointmentsResponse struct {
