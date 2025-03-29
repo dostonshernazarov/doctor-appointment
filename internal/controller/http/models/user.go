@@ -1,5 +1,7 @@
 package models
 
+import "github.com/dostonshernazarov/doctor-appointment/internal/entity"
+
 type SignUpUserRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
@@ -10,6 +12,7 @@ type UserResponse struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	FullName string `json:"full_name"`
+	Phone    string `json:"phone"`
 }
 
 type SignInUserRequest struct {
@@ -38,4 +41,8 @@ type Error struct {
 // Ping
 type PingResponse struct {
 	Message string `json:"message"`
+}
+
+type ListUsersResponse struct {
+	Users []entity.User `json:"users"`
 }

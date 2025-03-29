@@ -9,13 +9,13 @@ import (
 type (
 	// UserRepo -.
 	UserRepo interface {
-		CreateUser(ctx context.Context, user entity.User) error
+		CreateUser(ctx context.Context, user entity.User) (int, error)
 		GetUserByID(ctx context.Context, id int) (entity.User, error)
 		GetUserByEmail(ctx context.Context, email string) (entity.User, error)
 		ListUsers(ctx context.Context) ([]entity.User, error)
-		UpdateUser(ctx context.Context, user entity.User) error
+		UpdateUser(ctx context.Context, user entity.UserUpdate) error
 		DeleteUser(ctx context.Context, id int) error
-		GetPasswordHash(ctx context.Context, email string) (string, error)
+		GetPasswordHash(ctx context.Context, email string) (entity.GetPasswordHash, error)
 		UpdateToken(ctx context.Context, id int, token string) error
 	}
 
@@ -40,5 +40,6 @@ type (
 		UpdateDoctor(ctx context.Context, doctor entity.Doctor) error
 		DeleteDoctor(ctx context.Context, id int) error
 		ListSpecializations(ctx context.Context) ([]string, error)
+		GetBookedSchedulesByDoctorID(ctx context.Context, doctorID int) ([]entity.Schedule, error)
 	}
 )

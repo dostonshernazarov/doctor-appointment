@@ -37,3 +37,8 @@ type UserUpdate struct {
 	Password string `json:"password_hash"`
 	Phone    string `json:"phone"`
 }
+
+type GetPasswordHash struct {
+	PasswordHash string `json:"-"`
+	ID           int    `json:"id"`
+}

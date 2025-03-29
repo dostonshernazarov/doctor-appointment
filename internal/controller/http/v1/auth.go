@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,10 +16,11 @@ import (
 // @Description Sign up a user
 // @Accept json
 // @Produce json
+// @Tags auth
 // @Param user body models.SignUpUserRequest true "User"
 // @Success 201 {object} models.UserResponse
 // @Failure 400 {object} models.Error
-// @Router /users/signup [post]
+// @Router /auth/signup [post]
 func (r *HandlerV1) SignUpUser(c *fiber.Ctx) error {
 	var req models.SignUpUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -69,10 +71,11 @@ func (r *HandlerV1) SignUpUser(c *fiber.Ctx) error {
 // @Description Sign in a user
 // @Accept json
 // @Produce json
+// @Tags auth
 // @Param user body models.SignInUserRequest true "User"
 // @Success 200 {object} models.UserResponse
 // @Failure 400 {object} models.Error
-// @Router /users/signin [post]
+// @Router /auth/signin [post]
 func (r *HandlerV1) SignInUser(c *fiber.Ctx) error {
 	var req models.SignInUserRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -81,20 +84,22 @@ func (r *HandlerV1) SignInUser(c *fiber.Ctx) error {
 		return errorResponse(c, http.StatusBadRequest, "invalid request body")
 	}
 
-	user, err := r.User.GetUserByEmail(c.Context(), req.Email)
+	user, err := r.User.GetPasswordHash(c.Context(), req.Email)
 	if err != nil {
 		r.Logger.Error(err, "http - v1 - sign in user")
 
-		return errorResponse(c, http.StatusInternalServerError, "failed to get user")
+		return errorResponse(c, http.StatusInternalServerError, "failed to get password hash")
 	}
 
-	if !etc.CheckPasswordHash(req.Password, user.Password) {
+	fmt.Println("password hash", user.PasswordHash, "Request password", req.Password)
+
+	if !etc.CheckPasswordHash(req.Password, user.PasswordHash) {
 		r.Logger.Error("invalid credentials", "http - v1 - sign in user")
 
 		return errorResponse(c, http.StatusUnauthorized, "invalid credentials")
 	}
 
-	token, err := tokens.GenerateJWTToken(user.Email, string(user.Role), r.Config.Jwt.Secret, time.Duration(r.Config.Jwt.ExpiresAt)*time.Second)
+	token, err := tokens.GenerateJWTToken(req.Email, string(entity.RoleUser), r.Config.Jwt.Secret, time.Duration(r.Config.Jwt.ExpiresAt)*time.Second)
 	if err != nil {
 		r.Logger.Error(err, "http - v1 - sign in user")
 

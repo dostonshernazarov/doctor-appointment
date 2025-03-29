@@ -199,3 +199,35 @@ func (r *DoctorRepo) ListSpecializations(ctx context.Context) ([]string, error) 
 
 	return specializations, nil
 }
+
+// GetBookedSchedulesByDoctorID -.
+func (r *DoctorRepo) GetBookedSchedulesByDoctorID(ctx context.Context, doctorID int) ([]entity.Schedule, error) {
+	sql, args, err := r.Builder.
+		Select("schedule").
+		From("doctors").
+		Where("id = ?", doctorID).
+		ToSql()
+
+	if err != nil {
+		return nil, fmt.Errorf("DoctorRepo - GetBookedSchedulesByDoctorID - r.Builder: %w", err)
+	}
+
+	rows, err := r.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("DoctorRepo - GetBookedSchedulesByDoctorID - r.Pool.Query: %w", err)
+	}
+	defer rows.Close()
+
+	var schedules []entity.Schedule
+	for rows.Next() {
+		var schedule entity.Schedule
+		err = rows.Scan(&schedule)
+		if err != nil {
+			return nil, fmt.Errorf("DoctorRepo - GetBookedSchedulesByDoctorID - rows.Scan: %w", err)
+		}
+
+		schedules = append(schedules, schedule)
+	}
+
+	return schedules, nil
+}

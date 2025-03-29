@@ -1,0 +1,54 @@
+services:
+
+  migrate:
+    image: migrate/migrate
+    networks:
+      - doctor-appointment-network
+    volumes:
+      - ./migrations:/migrations
+    command: [ "-path", "/migrations", "-database",  "postgres://postgres:root@doctor_postgres:5432/doctor_appointment?sslmode=disable", "up" ]
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  postgres-db:
+    container_name: doctor_postgres
+    image: postgres
+    environment:
+      POSTGRES_DB: doctor_appointment
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_SSL_MODE: disable
+    volumes:
+      - doctor_database_volume:/var/lib/postgresql/data
+    ports:
+      - "5431:5432"
+    networks:
+      - doctor-appointment-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d doctor_appointment"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  backend-app:
+    container_name: doctor_app
+    build: .
+    networks:
+      - doctor-appointment-network
+    ports:
+      - "8070:8070"
+    env_file:
+      - .env
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  doctor_database_volume:
+
+networks:
+  doctor-appointment-network:

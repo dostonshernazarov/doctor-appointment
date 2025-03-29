@@ -1,13 +1,176 @@
 basePath: /v1
 definitions:
+  entity.Appointment:
+    properties:
+      appointment_time:
+        type: string
+      created_at:
+        type: string
+      doctor_id:
+        type: integer
+      duration:
+        description: in minutes
+        type: integer
+      id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  entity.Doctor:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      schedule:
+        $ref: '#/definitions/entity.Schedule'
+      specialization:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entity.Role:
+    enum:
+    - user
+    - admin
+    type: string
+    x-enum-varnames:
+    - RoleUser
+    - RoleAdmin
+  entity.Schedule:
+    properties:
+      days:
+        items:
+          type: string
+        type: array
+      end:
+        type: string
+      start:
+        type: string
+    type: object
+  entity.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      id:
+        type: integer
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/entity.Role'
+      token:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.AllDoctorsResponse:
+    properties:
+      doctors:
+        items:
+          $ref: '#/definitions/entity.Doctor'
+        type: array
+    type: object
+  models.Appointment:
+    type: object
+  models.AppointmentResponse:
+    properties:
+      doctor_id:
+        type: integer
+      id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.AppointmentsResponse:
+    properties:
+      appointments:
+        items:
+          $ref: '#/definitions/entity.Appointment'
+        type: array
+    type: object
+  models.BookedSchedulesResponse:
+    properties:
+      booked_schedules:
+        items:
+          $ref: '#/definitions/entity.Schedule'
+        type: array
+    type: object
+  models.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    type: object
+  models.Doctor:
+    properties:
+      name:
+        type: string
+      schedule:
+        $ref: '#/definitions/models.Schedule'
+      specialization:
+        type: string
+    type: object
+  models.DoctorResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      schedule:
+        $ref: '#/definitions/models.Schedule'
+      specialization:
+        type: string
+      updated_at:
+        type: string
+    type: object
   models.Error:
     properties:
       message:
         type: string
     type: object
+  models.ListUsersResponse:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/entity.User'
+        type: array
+    type: object
   models.PingResponse:
     properties:
       message:
+        type: string
+    type: object
+  models.Schedule:
+    properties:
+      days:
+        items:
+          type: string
+        type: array
+      end:
+        type: string
+      start:
         type: string
     type: object
   models.SignInUserRequest:
@@ -35,6 +198,34 @@ definitions:
     - full_name
     - password
     type: object
+  models.SpecializationResponse:
+    properties:
+      specializations:
+        items:
+          type: string
+        type: array
+    type: object
+  models.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    type: object
   models.UserResponse:
     properties:
       email:
@@ -43,6 +234,8 @@ definitions:
         type: string
       id:
         type: integer
+      phone:
+        type: string
     type: object
 host: localhost:8070
 info:
@@ -51,20 +244,239 @@ info:
   title: Doctor appointment api
   version: "1.0"
 paths:
-  /ping:
-    get:
+  /appointments:
+    post:
       consumes:
       - application/json
-      description: Ping the server
+      description: Create appointment
+      parameters:
+      - description: Appointment
+        in: body
+        name: appointment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Appointment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Create appointment
+      tags:
+      - appointment
+    put:
+      consumes:
+      - application/json
+      description: Update appointment
+      parameters:
+      - description: Appointment
+        in: body
+        name: appointment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Appointment'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.PingResponse'
-      summary: Ping
-  /users/signin:
+            $ref: '#/definitions/models.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Update appointment
+      tags:
+      - appointment
+  /appointments/{appointment_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete appointment
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Delete appointment
+      tags:
+      - appointment
+    get:
+      consumes:
+      - application/json
+      description: Get appointment by id
+      parameters:
+      - description: Appointment ID
+        in: path
+        name: appointment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get appointment by id
+      tags:
+      - appointment
+  /appointments/doctor/{doctor_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get appointments by doctor id
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get appointments by doctor id
+      tags:
+      - appointment
+  /appointments/doctor/{doctor_id}/booked-schedules:
+    get:
+      consumes:
+      - application/json
+      description: Get booked schedules by doctor id
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctor_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppointmentsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get booked schedules by doctor id
+      tags:
+      - appointment
+  /appointments/user/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get appointments by user id
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get appointments by user id
+      tags:
+      - appointment
+  /appointments/user/{user_id}/booked-schedules:
+    get:
+      consumes:
+      - application/json
+      description: Get booked schedules by user id
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AppointmentsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get booked schedules by user id
+      tags:
+      - appointment
+  /auth/signin:
     post:
       consumes:
       - application/json
@@ -88,7 +500,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Error'
       summary: Sign in user
-  /users/signup:
+      tags:
+      - auth
+  /auth/signup:
     post:
       consumes:
       - application/json
@@ -112,6 +526,435 @@ paths:
           schema:
             $ref: '#/definitions/models.Error'
       summary: Sign up user
+      tags:
+      - auth
+  /doctors:
+    get:
+      consumes:
+      - application/json
+      description: Get all doctors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AllDoctorsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get all doctors
+      tags:
+      - doctor
+    post:
+      consumes:
+      - application/json
+      description: Create doctor
+      parameters:
+      - description: Doctor
+        in: body
+        name: doctor
+        required: true
+        schema:
+          $ref: '#/definitions/models.Doctor'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.DoctorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Create doctor
+      tags:
+      - doctor
+  /doctors/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Delete doctor
+      tags:
+      - doctor
+    get:
+      consumes:
+      - application/json
+      description: Get doctor by id
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DoctorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get doctor by id
+      tags:
+      - doctor
+    put:
+      consumes:
+      - application/json
+      description: Update doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Doctor
+        in: body
+        name: doctor
+        required: true
+        schema:
+          $ref: '#/definitions/models.Doctor'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Doctor'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Update doctor
+      tags:
+      - doctor
+  /doctors/{id}/booked-schedules:
+    get:
+      consumes:
+      - application/json
+      description: Get booked schedules by doctor id
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.BookedSchedulesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get booked schedules by doctor id
+      tags:
+      - doctor
+  /doctors/specialization/{specialization}:
+    get:
+      consumes:
+      - application/json
+      description: Get doctors by specialization
+      parameters:
+      - description: Specialization
+        in: path
+        name: specialization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AllDoctorsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get doctors by specialization
+      tags:
+      - doctor
+  /doctors/specializations:
+    get:
+      consumes:
+      - application/json
+      description: List specializations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SpecializationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: List specializations
+      tags:
+      - doctor
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Ping the server
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PingResponse'
+      summary: Ping
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ListUsersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get all users
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Create user
+      parameters:
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Create user
+      tags:
+      - user
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Delete user
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Get user by id
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Get user by id
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.Error'
+      summary: Update user
+      tags:
+      - user
+schemes:
+- http
+- https
 securityDefinitions:
   BearerAuth:
     in: header

@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"github.com/dostonshernazarov/doctor-appointment/config"
-	"github.com/dostonshernazarov/doctor-appointment/internal/controller/http/middleware"
-	"github.com/dostonshernazarov/doctor-appointment/internal/entity"
 	"github.com/dostonshernazarov/doctor-appointment/internal/usecase"
 	"github.com/dostonshernazarov/doctor-appointment/pkg/logger"
 	"github.com/go-playground/validator"
@@ -46,9 +44,8 @@ func NewUserRoutes(c HandlerV1Config) {
 		Router:         c.Router,
 	}
 
-	userGroup := r.Router.Group("/users").Use(middleware.Authentication(middleware.AuthConfig{
-		JWTSecret: r.Config.Jwt.Secret,
-	})).Use(middleware.RequireRole(entity.RoleUser))
+	// Should not be role required in signup
+	userGroup := r.Router.Group("/auth")
 	{
 		userGroup.Post("/signup", r.SignUpUser)
 		userGroup.Post("/signin", r.SignInUser)

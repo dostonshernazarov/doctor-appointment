@@ -18,23 +18,47 @@ func NewAppointment(pg *postgres.Postgres) *AppointmentRepo {
 	return &AppointmentRepo{pg}
 }
 
-// CreateAppointment - creates a new appointment in the database.
+// CreateAppointment -
 func (r *AppointmentRepo) CreateAppointment(ctx context.Context, appointment entity.Appointment) error {
 	sql, args, err := r.Builder.
+		Select("id", "user_id", "doctor_id", "appointment_time", "duration", "status", "created_at", "updated_at").
+		From("appointments").
+		Where("doctor_id = ?", appointment.DoctorID).
+		Where("appointment_time = ?", appointment.AppointmentTime).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("AppointmentRepo - CreateAppointment - r.Builder: %w", err)
+	}
+
+	row := r.Pool.QueryRow(ctx, sql, args...)
+
+	var existingAppointment entity.Appointment
+	err = row.Scan(&existingAppointment.ID, &existingAppointment.UserID, &existingAppointment.DoctorID, &existingAppointment.AppointmentTime, &existingAppointment.Duration, &existingAppointment.Status, &existingAppointment.CreatedAt, &existingAppointment.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("AppointmentRepo - CreateAppointment - row.Scan: %w", err)
+	}
+
+	if existingAppointment.ID != 0 {
+		return fmt.Errorf("AppointmentRepo - CreateAppointment - appointment already booked")
+	}
+
+	sql, args, err = r.Builder.
 		Insert("appointments").
 		Columns("user_id", "doctor_id", "appointment_time", "duration", "status").
 		Values(appointment.UserID, appointment.DoctorID, appointment.AppointmentTime, appointment.Duration, appointment.Status).ToSql()
 
 	if err != nil {
-		return fmt.Errorf("AppointmentRepo - Store - r.Builder: %w", err)
+		return fmt.Errorf("AppointmentRepo - CreateAppointment - r.Builder: %w", err)
 	}
 
 	_, err = r.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return fmt.Errorf("AppointmentRepo - Store - r.Pool.Exec: %w", err)
+		return fmt.Errorf("AppointmentRepo - CreateAppointment - r.Pool.Exec: %w", err)
 	}
 
 	return nil
+
 }
 
 // GetAppointmentByID -.

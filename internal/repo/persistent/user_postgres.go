@@ -21,23 +21,27 @@ func NewUser(pg *postgres.Postgres) *UserRepo {
 	return &UserRepo{pg}
 }
 
-// Create -.
-func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) error {
+// Create -. return id
+func (r *UserRepo) CreateUser(ctx context.Context, user entity.User) (int, error) {
 	sql, args, err := r.Builder.
 		Insert("users").
 		Columns("fullname", "email", "phone", "password_hash", "role").
+		Options("RETURNING id").
 		Values(user.FullName, user.Email, user.Phone, user.Password, user.Role).ToSql()
 
 	if err != nil {
 		return fmt.Errorf("UserRepo - Store - r.Builder: %w", err)
 	}
 
-	_, err = r.Pool.Exec(ctx, sql, args...)
+	row := r.Pool.QueryRow(ctx, sql, args...)
+
+	var id int
+	err = row.Scan(&id)
 	if err != nil {
 		return fmt.Errorf("UserRepo - Store - r.Pool.Exec: %w", err)
 	}
 
-	return nil
+	return id, nil
 }
 
 // GetUserByEmail -.
@@ -96,7 +100,7 @@ func (r *UserRepo) ListUsers(ctx context.Context) ([]entity.User, error) {
 }
 
 // UpdateUser -.
-func (r *UserRepo) UpdateUser(ctx context.Context, user entity.User) error {
+func (r *UserRepo) UpdateUser(ctx context.Context, user entity.UserUpdate) error {
 	updateTime := time.Now()
 	sql, args, err := r.Builder.
 		Update("users").
@@ -165,27 +169,31 @@ func (r *UserRepo) GetUserByID(ctx context.Context, id int) (entity.User, error)
 }
 
 // GetPasswordHash -.
-func (r *UserRepo) GetPasswordHash(ctx context.Context, email string) (string, error) {
+func (r *UserRepo) GetPasswordHash(ctx context.Context, email string) (entity.GetPasswordHash, error) {
 	sql, args, err := r.Builder.
-		Select("password_hash").
+		Select("password_hash", "id").
 		From("users").
 		Where("email = ?", email).
 		Limit(1).
 		ToSql()
 
 	if err != nil {
-		return "", fmt.Errorf("UserRepo - GetPasswordHash - r.Builder: %w", err)
+		return entity.GetPasswordHash{}, fmt.Errorf("UserRepo - GetPasswordHash - r.Builder: %w", err)
 	}
 
 	row := r.Pool.QueryRow(ctx, sql, args...)
 
 	var passwordHash string
-	err = row.Scan(&passwordHash)
+	var id int
+	err = row.Scan(&passwordHash, &id)
 	if err != nil {
-		return "", fmt.Errorf("UserRepo - GetPasswordHash - row.Scan: %w", err)
+		return entity.GetPasswordHash{}, fmt.Errorf("UserRepo - GetPasswordHash - row.Scan: %w", err)
 	}
 
-	return passwordHash, nil
+	return entity.GetPasswordHash{
+		PasswordHash: passwordHash,
+		ID:           id,
+	}, nil
 }
 
 // UpdateToken -.

@@ -22,7 +22,7 @@ func NewUseCase(userRepo repo.UserRepo, doctorRepo repo.DoctorRepo, appointmentR
 }
 
 // CreateUser -.
-func (uc *UseCase) CreateUser(ctx context.Context, user entity.User) error {
+func (uc *UseCase) CreateUser(ctx context.Context, user entity.User) (int, error) {
 	return uc.userRepo.CreateUser(ctx, user)
 }
 
@@ -42,7 +42,7 @@ func (uc *UseCase) ListUsers(ctx context.Context) ([]entity.User, error) {
 }
 
 // UpdateUser -.
-func (uc *UseCase) UpdateUser(ctx context.Context, user entity.User) error {
+func (uc *UseCase) UpdateUser(ctx context.Context, user entity.UserUpdate) error {
 	return uc.userRepo.UpdateUser(ctx, user)
 }
 
@@ -52,7 +52,7 @@ func (uc *UseCase) DeleteUser(ctx context.Context, id int) error {
 }
 
 // GetPasswordHash -.
-func (uc *UseCase) GetPasswordHash(ctx context.Context, email string) (string, error) {
+func (uc *UseCase) GetPasswordHash(ctx context.Context, email string) (entity.GetPasswordHash, error) {
 	return uc.userRepo.GetPasswordHash(ctx, email)
 }
 
@@ -134,4 +134,9 @@ func (uc *UseCase) GetAppointmentByID(ctx context.Context, id int) (entity.Appoi
 // GetAppointmentsByUserID -.
 func (uc *UseCase) GetAppointmentsByUserID(ctx context.Context, userID int) ([]entity.Appointment, error) {
 	return uc.appointmentRepo.GetAppointmentsByUserID(ctx, userID)
+}
+
+// GetBookedSchedulesByDoctorID -.
+func (uc *UseCase) GetBookedSchedulesByDoctorID(ctx context.Context, doctorID int) ([]entity.Schedule, error) {
+	return uc.doctorRepo.GetBookedSchedulesByDoctorID(ctx, doctorID)
 }

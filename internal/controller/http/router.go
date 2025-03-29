@@ -9,6 +9,7 @@ import (
 	"github.com/dostonshernazarov/doctor-appointment/pkg/logger"
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 )
 
@@ -39,6 +40,7 @@ func NewRouterConfig(app *fiber.App, cfg *config.Config, l logger.Interface, use
 // @description API for doctor appointment
 // @version     1.0
 // @host        localhost:8070
+// @schemes     http https
 // @BasePath    /v1
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -48,6 +50,15 @@ func NewRouter(r *Router) {
 
 	// Swagger
 	r.app.Get("/swagger/*", swagger.HandlerDefault)
+
+	// Configure CORS middleware
+	r.app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:8070, http://127.0.0.1:8070",
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		ExposeHeaders:    "Content-Length",
+		AllowCredentials: true,
+	}))
 
 	// Routes
 	apiV1Group := r.app.Group("/v1")
